@@ -39,7 +39,12 @@ hl_5 = tflearn.fully_connected(hl_4, 128, activation='relu', bias=True, weights_
 hl_6 = tflearn.fully_connected(hl_5, 128, activation='relu', bias=True, weights_init=relu_weights_init, regularizer=relu_regularizer, bias_init=relu_bias_init,   name='hl_6')
 
 at_output = tflearn.fully_connected(hl_6,40,activation='softmax',bias=True, weights_init=softmax_weights_init, regularizer=softmax_regularizer,  bias_init=softmax_bias_init,  name='at_output')
-network = tflearn.layers.estimator.regression (at_output, loss='categorical_crossentropy', learning_rate=0.0001)
+
+y_pred = at_output  # Apply some ops
+y_true = tf.placeholder(tf.float32,shape=[None, 40])  # Labels
+acc_op = tflearn.accuracy_op(y_pred, y_true)
+
+network = tflearn.layers.estimator.regression (at_output, loss='categorical_crossentropy',metric=acc_op, learning_rate=0.0001)
 
 model = tflearn.models.dnn.DNN (network, tensorboard_verbose=3, tensorboard_dir=LOG_DIR, checkpoint_path=CHECKPOINT_DIR, best_checkpoint_path=BEST_CHECKPOINT_DIR, best_val_accuracy=0.92)
 

@@ -20,7 +20,7 @@ import copy
 
 
 NSL_KDD_MASTER = '/home/aabdul/projects/enids/data/NSL-KDD/kdd_master_cs_lime.csv'
-NSL_KDD_MASTER_TRUE_LABELS = '/home/aabdul/projects/enids/data/NSL-KDD/master/master.csv'
+NSL_KDD_MASTER_TRUE_LABELS = '/home/aabdul/projects/enids/data/NSL-KDD/master/master_cs.csv'
 
 TRAFFIC_TYPE_COLS = ['traffic_type_anomalous','traffic_type_normal']
 ATTACK_CATEGORY_COLS = ['attack_category_dos','attack_category_normal','attack_category_probe','attack_category_r2l','attack_category_u2r']
@@ -173,7 +173,7 @@ if __name__=="__main__":
         del(MODEL)
         MODEL = get_best_model(model_name)
         explainer = lime.lime_tabular.LimeTabularExplainer(data, feature_names=FEATURE_NAMES, class_names=class_names, categorical_features=CATEGORICAL_FEATURES, categorical_names=CATEGORICAL_NAMES, discretize_continuous=True)
-
+        sys.exit()
         zero_entropy_index, high_entropy_index, pred_label = examine_points(copy.deepcopy(data))
 
         #print("Number of confident points:", zero_entropy_index[0])
@@ -199,10 +199,10 @@ if __name__=="__main__":
         #     else:
         #          exp.save_to_file(dp+'confident/classified/' + str(i) + '.html')
 
-        num_sample = random.sample(range(1, len(high_entropy_index[0])), 10)
-        for i in  num_sample:
-             exp = explainer.explain_instance(data[i], predict_fn, num_features=8, top_labels=top_labels)
-             if true_label[i] != pred_label[i]:
-                 exp.save_to_file(dp+'confused/misclassified/' + str(i) + '.html')
-             else:
-                 exp.save_to_file(dp+'confused/classified/' + str(i) + '.html')
+        # num_sample = random.sample(range(1, len(high_entropy_index[0])), 10)
+        # for i in  num_sample:
+        #      exp = explainer.explain_instance(data[i], predict_fn, num_features=8, top_labels=top_labels)
+        #      if true_label[i] != pred_label[i]:
+        #          exp.save_to_file(dp+'confused/misclassified/' + str(i) + '.html')
+        #      else:
+        #          exp.save_to_file(dp+'confused/classified/' + str(i) + '.html')

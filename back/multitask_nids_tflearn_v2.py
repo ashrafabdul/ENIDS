@@ -23,55 +23,6 @@ CHECKPOINT_DIR  = '/home/aabdul/projects/enids/data/NSL-KDD/master/model/checkpo
 BEST_CHECKPOINT_DIR = '/home/aabdul/projects/enids/data/NSL-KDD/master/model/best_checkpoint/cl/'
 
 
-
-def prepare_data(standardize_training_data=False,scale=True):
-
-    PRED_COLS = TRAFFIC_TYPE_COLS + ATTACK_CATEGORY_COLS + ATTACK_TYPE_COLS
-    df_train = pd.read_csv(NSL_KDD_TRAIN, dtype=np.float32)
-    x_train = df_train[df_train.columns.difference(INDEX_COL + PRED_COLS)]
-    y_train = df_train[PRED_COLS]
-    print(y_train.head(2))
-    if(standardize_training_data):
-        if(scale):
-            for col in x_train.columns:
-                min = x_train[col].min()
-                max = x_train[col].max()
-                print(col,max,min)
-                if max - min == 0:
-                    if not max == 0:
-                        x_train[col] = x_train[col]/max
-                else:
-                    x_train[col] = (x_train[col] - min) / max - min
-        else:
-            for col in x_train.columns:
-                std = x_train[col].std(ddof=0)
-                mean = x_train[col].mean()
-                if not std == 0:
-                    x_train[col] = (x_train[col] - mean)/ std
-                else:
-                    print(col,std,mean)
-    print(x_train.loc[:, x_train.isnull().any()])
-    x_train = x_train.values
-    y_train = y_train.values
-
-    df_val = pd.read_csv(NSL_KDD_VAL)
-    x_val = df_val[df_val.columns.difference(INDEX_COL + PRED_COLS)]
-    y_val = df_val[PRED_COLS]
-    x_val = x_val.values
-    y_val = y_val.values
-
-    df_test = pd.read_csv(NSL_KDD_TEST)
-    x_test = df_test[df_test.columns.difference(INDEX_COL + PRED_COLS)]
-    y_test = df_test[PRED_COLS]
-    x_test = x_test.values
-    y_test = y_test.values
-
-    return [[x_train,y_train],[x_val,y_val],[x_test,y_test]]
-
-
-[[x_train,y_train],[x_val,y_val],[x_test,y_test]] = prepare_data()
-
-
 def my_objective(y_pred, y_true):
     with tf.name_scope(None):
         begin_tt = [0,0]
