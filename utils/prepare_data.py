@@ -64,7 +64,7 @@ def prepare_data(train_file,val_file,test_file,standardize_training_data=False,s
     return [[x_train,y_train],[x_val,y_val],[x_test,y_test]]
 
 
-def prepare_data_pandas(train_file,val_file,test_file,standardize_training_data=False,scale=True):
+def prepare_data_pandas(train_file,val_file,test_file,standardize_training_data=False,scale=True,test_only=True):
 
     PRED_COLS = TRAFFIC_TYPE_COLS + ATTACK_CATEGORY_COLS + ATTACK_TYPE_COLS
 
@@ -110,10 +110,19 @@ def prepare_data_pandas(train_file,val_file,test_file,standardize_training_data=
     x_test = df_test[df_test.columns.difference(INDEX_COL + PRED_COLS)]
     y_test = df_test[PRED_COLS]
 
-    x = pd.concat([x_train,x_val,x_test])
-    y = pd.concat([y_train, y_val, y_test])
+    if not test_only:
+        x = pd.concat([x_train,x_val,x_test])
+        y = pd.concat([y_train, y_val, y_test])
+        x = x.reset_index(drop=True)
+        y = y.reset_index(drop=True)
+    else:
+        x = x_test
+        y = y_test
+        x = x.reset_index(drop=True)
+        y = y.reset_index(drop=True)
 
-    return [x,y]
+    return [x, y]
+
 
 if __name__=="__main__":
     NSL_KDD_TRAIN = '/home/aabdul/projects/enids/data/NSL-KDD/traffic_type/train_cs.csv'

@@ -5,14 +5,31 @@
 
 import tflearn
 import tensorflow as tf
+from tensorflow.python import pywrap_tensorflow
+import numpy as np
+
+
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers.advanced_activations import PReLU
 
 
 BEST_CHECKPOINT_TT = '/home/aabdul/projects/enids/data/NSL-KDD/traffic_type/model/best_checkpoint/9446'
 BEST_CHECKPOINT_AC = '/home/aabdul/projects/enids/data/NSL-KDD/attack_category/model/best_checkpoint/nwl/9898'
 BEST_CHECKPOINT_AT = '/home/aabdul/projects/enids/data/NSL-KDD/attack_type/model/best_checkpoint/9522'
-BEST_CHECKPOINT_MTL = '/home/aabdul/projects/enids/data/NSL-KDD/master/model/best_checkpoint/28894'
+#BEST_CHECKPOINT_MTL = '/home/aabdul/projects/enids/data/NSL-KDD/master/model/best_checkpoint/28894'
+BEST_CHECKPOINT_MTL = '/home/aabdul/projects/enids/data/NSL-KDD/master/model/best_checkpoint/mtl_tt_ac_at/29096'
 BEST_CHECKPOINT_MTL_TT_AC = '/home/aabdul/projects/enids/data/NSL-KDD/master/model/best_checkpoint/mtl_tt_ac/19633'
 
+
+
+def get_model_parameters(file_name, tensor_names):
+    reader = pywrap_tensorflow.NewCheckpointReader(file_name)
+    var_to_shape_map = reader.get_variable_to_shape_map()
+    param_dict = {}
+    for key in tensor_names:
+        param_dict[key]=reader.get_tensor(key)
+    return param_dict
 
 def mtl_loss(y,y1):
     return None
@@ -126,4 +143,46 @@ def get_best_model(model_name):
 
 
 
+def get_best_model_keras(model_name):
 
+    if model_name == "ac_hl6":
+
+        tensor_names = ['hl_1/W', 'hl_1/b', 'hl_1/PReLU/alphas', 'hl_2/W', 'hl_2/b', 'hl_2/PReLU/alphas', 'hl_3/W', 'hl_3/b', 'hl_3/PReLU/alphas', 'hl_4/W', 'hl_4/b', 'hl_4/PReLU/alphas', 'hl_5/W','hl_5/b', 'hl_5/PReLU/alphas', 'hl_6/W', 'hl_6/b', 'hl_6/PReLU/alphas', 'ac_output/W', 'ac_output/b']
+        param_dict = get_model_parameters(BEST_CHECKPOINT_AC,tensor_names)
+
+        #PReLU(input_shape=[128],weights=param_dict['hl_2/PReLU/alphas'])
+        model = Sequential()
+        model.add(Dense(128, input_dim=121, activation='relu',use_bias=True,weights=[param_dict['hl_1/W'],param_dict['hl_1/b']]))
+        model.add(Dense(128, activation='relu', use_bias=True,weights=[param_dict['hl_2/W'],param_dict['hl_2/b']]))
+        model.add(Dense(128, activation='relu', use_bias=True,weights=[param_dict['hl_3/W'],param_dict['hl_3/b']]))
+        model.add(Dense(128, activation='relu', use_bias=True,weights=[param_dict['hl_4/W'],param_dict['hl_4/b']]))
+        model.add(Dense(128, activation='relu', use_bias=True,weights=[param_dict['hl_5/W'],param_dict['hl_5/b']]))
+        model.add(Dense(128, activation='relu', use_bias=True,weights=[param_dict['hl_6/W'],param_dict['hl_6/b']]))
+        model.add(Dense(5, activation='softmax', use_bias=True,weights=[param_dict['ac_output/W'],param_dict['ac_output/b']]))
+        model.compile(loss='categorical_crossentropy',optimizer='adam')
+
+        return model
+
+    elif model_name == "mtl_ac":
+
+        tensor_names = ['shared_hl_1/W', 'shared_hl_1/b', 'shared_hl_1/PReLU/alphas', 'shared_hl_2/W', 'shared_hl_2/b', 'shared_hl_2/PReLU/alphas', 'shared_hl_3/W', 'shared_hl_3/b', 'shared_hl_3/PReLU/alphas', 'shared_hl_4/W', 'shared_hl_4/b', 'shared_hl_4/PReLU/alphas', 'shared_hl_5/W','shared_hl_5/b', 'shared_hl_5/PReLU/alphas', 'shared_hl_6/W', 'shared_hl_6/b', 'shared_hl_6/PReLU/alphas', 'ac_output/W', 'ac_output/b','ac_hl_1/W', 'ac_hl_1/b']
+        param_dict = get_model_parameters(BEST_CHECKPOINT_MTL,tensor_names)
+
+        #PReLU(input_shape=[128],weights=param_dict['hl_2/PReLU/alphas'])
+        model = Sequential()
+        model.add(Dense(128, input_dim=121, activation='relu',use_bias=True,weights=[param_dict['shared_hl_1/W'],param_dict['shared_hl_1/b']]))
+        model.add(Dense(128, activation='relu', use_bias=True,weights=[param_dict['shared_hl_2/W'],param_dict['shared_hl_2/b']]))
+        model.add(Dense(128, activation='relu', use_bias=True,weights=[param_dict['shared_hl_3/W'],param_dict['shared_hl_3/b']]))
+        model.add(Dense(128, activation='relu', use_bias=True,weights=[param_dict['shared_hl_4/W'],param_dict['shared_hl_4/b']]))
+        model.add(Dense(128, activation='relu', use_bias=True,weights=[param_dict['shared_hl_5/W'],param_dict['shared_hl_5/b']]))
+        model.add(Dense(128, activation='relu', use_bias=True,weights=[param_dict['shared_hl_6/W'],param_dict['shared_hl_6/b']]))
+        model.add(Dense(128, activation='relu', use_bias=True, weights=[param_dict['ac_hl_1/W'], param_dict['ac_hl_1/b']]))
+        model.add(Dense(5, activation='softmax', use_bias=True,weights=[param_dict['ac_output/W'],param_dict['ac_output/b']]))
+        model.compile(loss='categorical_crossentropy',optimizer='adam')
+
+        return model
+
+
+if __name__=="__main__":
+    model = get_best_model_keras('mtl')
+    print(model.predict(np.array([[0]*121])))

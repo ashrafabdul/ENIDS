@@ -1,10 +1,11 @@
 from utils.get_best_model import get_best_model
-from utils.prepare_data import prepare_data
+from utils.prepare_data import prepare_data_pandas
 
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 
 import numpy as np
+import pandas as pd
 
 NSL_KDD_DIR = '/home/aabdul/projects/enids/data/NSL-KDD/master/'
 NSL_KDD_TRAIN = '/home/aabdul/projects/enids/data/NSL-KDD/master/train_cs.csv'
@@ -31,27 +32,52 @@ def split_task_predictions(y_pred, y_true):
 
 if __name__=="__main__":
 
-    [[x_train, y_train], [x_val, y_val], [x_test, y_test]] = prepare_data(NSL_KDD_TRAIN,NSL_KDD_VAL,NSL_KDD_TEST)
+    x,y = prepare_data_pandas(NSL_KDD_TRAIN,NSL_KDD_VAL,NSL_KDD_TEST)
+    x_cols = x.columns
+    y_cols = y.columns
+    model = get_best_model("mtl")
 
-    model = get_best_model("mtl_tt_ac")
 
-    y_train_pred = model.predict(x_train)
-    y_val_pred = model.predict(x_val)
-    y_test_pred = model.predict(x_test)
+    y_pred_cols = [s+'_pred' for s in ATTACK_CATEGORY_COLS]
 
-    for y_pred,y_true,split in [[y_train_pred,y_train,'train'],[y_val_pred,y_val,'val'],[y_test_pred,y_test,'test']]:
-        task_splits = split_task_predictions(y_pred,y_true)
-        for y_pred_task,y_true_task,task,labels in task_splits:
-            print('===================================================================================')
-            print("Split",split,"Task",task)
-            y_true_task = np.argmax(y_true_task, axis=1)
-            y_pred_task = np.argmax(y_pred_task, axis=1)
-            print(classification_report(y_true_task,y_pred_task ,target_names=labels))
-            y_true_task_labels = []
-            y_pred_task_labels = []
-            for v in y_true_task:
-                y_true_task_labels.append(labels[v])
-            for v in y_pred_task:
-                y_pred_task_labels.append(labels[v])
-            print(confusion_matrix(y_true_task_labels,y_pred_task_labels,labels=labels))
-            print('===================================================================================')
+    batch_x = np.array_split(x.as_matrix(),3)
+    y_pred = []
+    for batch in batch_x:
+        pred = model.predict(batch)
+        y_pred.append(pred[:,2:7])
+
+    df_ypred = pd.DataFrame(np.vstack(y_pred))
+    df_ypred.columns = y_pred_cols
+    print(len(df_ypred))
+    print(len(x))
+    print(len(y))
+    df = pd.concat([x,y,df_ypred],ignore_index=True,axis=1)
+
+    df.columns = list(x_cols) + list(y_cols) + y_pred_cols
+    df.to_csv(NSL_KDD_DIR+'_mtl_ac_predictions_full.csv',index=False)
+
+
+    # [[x_train, y_train], [x_val, y_val], [x_test, y_test]] = prepare_data(NSL_KDD_TRAIN,NSL_KDD_VAL,NSL_KDD_TEST)
+    #
+    # model = get_best_model("mtl_tt_ac")
+    #
+    # y_train_pred = model.predict(x_train)
+    # y_val_pred = model.predict(x_val)
+    # y_test_pred = model.predict(x_test)
+    #
+    # for y_pred,y_true,split in [[y_train_pred,y_train,'train'],[y_val_pred,y_val,'val'],[y_test_pred,y_test,'test']]:
+    #     task_splits = split_task_predictions(y_pred,y_true)
+    #     for y_pred_task,y_true_task,task,labels in task_splits:
+    #         print('===================================================================================')
+    #         print("Split",split,"Task",task)
+    #         y_true_task = np.argmax(y_true_task, axis=1)
+    #         y_pred_task = np.argmax(y_pred_task, axis=1)
+    #         print(classification_report(y_true_task,y_pred_task ,target_names=labels))
+    #         y_true_task_labels = []
+    #         y_pred_task_labels = []
+    #         for v in y_true_task:
+    #             y_true_task_labels.append(labels[v])
+    #         for v in y_pred_task:
+    #             y_pred_task_labels.append(labels[v])
+    #         print(confusion_matrix(y_true_task_labels,y_pred_task_labels,labels=labels))
+    #         print('===================================================================================')
